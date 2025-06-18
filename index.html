@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Snake QR Game</title>
     <style>
         body {
@@ -14,14 +15,92 @@
             margin: 0;
             font-family: Arial, sans-serif;
             color: #ffffff;
+            padding: 10px;
+            box-sizing: border-box;
         }
         canvas {
             background-color: #fffdf4;
+            max-width: 100%;
+            height: auto;
         }
         #score, #timer {
             margin: 5px;
             font-size: 20px;
             font-weight: bold;
+            text-align: center;
+        }
+        
+        /* Controles mobile - só aparecem em dispositivos móveis */
+        .mobile-controls {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        
+        .controls-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background-color: #333;
+            border: 2px solid #555;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s ease;
+            touch-action: manipulation;
+        }
+        
+        .control-btn:hover {
+            background-color: #444;
+            border-color: #666;
+        }
+        
+        .control-btn:active {
+            background-color: #555;
+            transform: scale(0.95);
+        }
+        
+        /* Media query para mostrar controles apenas em dispositivos móveis */
+        @media (hover: none) and (pointer: coarse) {
+            .mobile-controls {
+                display: flex;
+            }
+        }
+        
+        /* Ajustes responsivos */
+        @media (max-width: 768px) {
+            canvas {
+                width: 90vw;
+                max-width: 600px;
+            }
+            
+            #score, #timer {
+                font-size: 18px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            #score, #timer {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -29,6 +108,18 @@
     <div id="score">0 / 0</div>
     <div id="timer"></div>
     <canvas id="gameCanvas" width="620" height="620"></canvas>
+    
+    <!-- Controles Mobile -->
+    <div class="mobile-controls">
+        <div class="controls-row">
+            <div class="control-btn" id="upBtn">↑</div>
+        </div>
+        <div class="controls-row">
+            <div class="control-btn" id="leftBtn">←</div>
+            <div class="control-btn" id="downBtn">↓</div>
+            <div class="control-btn" id="rightBtn">→</div>
+        </div>
+    </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -922,12 +1013,75 @@
 
         let fruit = placeNextFruit();
 
+        // Função para controlar direção
+        function changeDirection(newDirection) {
+            if (frozen) return;
+            
+            switch(newDirection) {
+                case 'up':
+                    if (direction.y !== 1) direction = {x: 0, y: -1};
+                    break;
+                case 'down':
+                    if (direction.y !== -1) direction = {x: 0, y: 1};
+                    break;
+                case 'left':
+                    if (direction.x !== 1) direction = {x: -1, y: 0};
+                    break;
+                case 'right':
+                    if (direction.x !== -1) direction = {x: 1, y: 0};
+                    break;
+            }
+        }
+
+        // Event listeners para teclado (PC)
         document.addEventListener('keydown', e => {
             if (frozen) return;
             if (e.key === 'ArrowUp' && direction.y !== 1) direction = {x: 0, y: -1};
             if (e.key === 'ArrowDown' && direction.y !== -1) direction = {x: 0, y: 1};
             if (e.key === 'ArrowLeft' && direction.x !== 1) direction = {x: -1, y: 0};
             if (e.key === 'ArrowRight' && direction.x !== -1) direction = {x: 1, y: 0};
+        });
+
+        // Event listeners para botões mobile
+        document.getElementById('upBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            changeDirection('up');
+        });
+        
+        document.getElementById('downBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            changeDirection('down');
+        });
+        
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            changeDirection('left');
+        });
+        
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            changeDirection('right');
+        });
+
+        // Também adicionar click events como fallback
+        document.getElementById('upBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            changeDirection('up');
+        });
+        
+        document.getElementById('downBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            changeDirection('down');
+        });
+        
+        document.getElementById('leftBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            changeDirection('left');
+        });
+        
+        document.getElementById('rightBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            changeDirection('right');
         });
 
         function gameLoop() {
@@ -1024,7 +1178,7 @@
             fruit = placeNextFruit();
             gameOver = false;
             frozen = false;
-            document.getElementById('score').innerText = `${totalBlocks}`;
+            document.getElementById('score').innerText = `0 / ${totalBlocks}`;
             document.getElementById('timer').innerText = '';
         }
 
