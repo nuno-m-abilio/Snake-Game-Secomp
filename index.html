@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            background-color: #191919;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            color: #ffffff;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        canvas {
+            background-color: #fffdf4;
+            max-width: 100%;
+            height: auto;
+        }
+        #score, #timer {
+            margin: 5px;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        /* Controles mobile - só aparecem em dispositivos móveis */
+        .mobile-controls {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        
+        .controls-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background-color: #333;
+            border: 2px solid #555;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.1s ease;
+            touch-action: manipulation;
+        }
+        
+        .control-btn:hover {
+            background-color: #444;
+            border-color: #666;
+        }
+        
+        .control-btn:active {
+            background-color: #555;
+            transform: scale(0.95);
+        }
+        
+        /* Media query para mostrar controles apenas em dispositivos móveis */
+        @media (hover: none) and (pointer: coarse) {
+            .mobile-controls {
+                display: flex;
+            }
+        }
+        
+        /* Ajustes responsivos */
+        @media (max-width: 768px) {
+            canvas {
+                width: 90vw;
+                max-width: 600px;
+            }
+            
+            #score, #timer {
+                font-size: 18px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+            
+            #score, #timer {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="score">0 / 0</div>
+    <div id="timer"></div>
+    <canvas id="gameCanvas" width="620" height="620"></canvas>
+    
+    <!-- Controles Mobile -->
+    <div class="mobile-controls">
+        <div class="controls-row">
+            <div class="control-btn" id="upBtn">↑</div>
+        </div>
+        <div class="controls-row">
+            <div class="control-btn" id="leftBtn">←</div>
+            <div class="control-btn" id="downBtn">↓</div>
+            <div class="control-btn" id="rightBtn">→</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const blockSize = 10;
+        const gridSize = 62;
+        const snakeColor = '#B5EB73';
+        const grayColor = '#999999';
+        const blackColor = '#dd6d56';
+
+        let snake = [{x: 30, y: 30}];
+        let direction = {x: 1, y: 0};
+        let fruitIndex = 0;
+        let gameOver = false;
+        let frozen = false;
+        let fillCount = 0;
+        let totalBlocks = 0;
+
+        let Positions = [
+            {x: 10, y: 10},
+            {x: 11, y: 10},
+            {x: 12, y: 10},
+            {x: 13, y: 10},
+            {x: 14, y: 10},
+            {x: 15, y: 10},
+            {x: 16, y: 10},
+            {x: 19, y: 10},
+            {x: 20, y: 10},
+            {x: 21, y: 10},
+            {x: 22, y: 10},
+            {x: 23, y: 10},
+            {x: 27, y: 10},
+            {x: 29, y: 10},
+            {x: 30, y: 10},
+            {x: 31, y: 10},
+            {x: 32, y: 10},
+            {x: 33, y: 10},
+            {x: 34, y: 10},
+            {x: 38, y: 10},
+            {x: 39, y: 10},
+            {x: 41, y: 10},
+            {x: 42, y: 10},
+            {x: 44, y: 10},
+            {x: 45, y: 10},
+            {x: 46, y: 10},
+            {x: 47, y: 10},
+            {x: 48, y: 10},
+            {x: 49, y: 10},
+            {x: 50, y: 10},
+            {x: 10, y: 11},
+            {x: 16, y: 11},
+            {x: 19, y: 11},
+            {x: 24, y: 11},
+            {x: 26, y: 11},
+            {x: 27, y: 11},
+            {x: 30, y: 11},
+            {x: 31, y: 11},
+            {x: 36, y: 11},
+            {x: 37, y: 11},
+            {x: 38, y: 11},
+            {x: 42, y: 11},
+            {x: 44, y: 11},
+            {x: 50, y: 11},
+            {x: 10, y: 12},
+            {x: 12, y: 12},
+            {x: 13, y: 12},
+            {x: 14, y: 12},
+            {x: 16, y: 12},
+            {x: 18, y: 12},
+            {x: 21, y: 12},
+            {x: 27, y: 12},
+            {x: 28, y: 12},
+            {x: 29, y: 12},
+            {x: 30, y: 12},
+            {x: 31, y: 12},
+            {x: 32, y: 12},
+            {x: 36, y: 12},
+            {x: 38, y: 12},
+            {x: 44, y: 12},
+            {x: 46, y: 12},
+            {x: 47, y: 12},
+            {x: 48, y: 12},
+            {x: 50, y: 12},
+            {x: 10, y: 13},
+            {x: 12, y: 13},
+            {x: 13, y: 13},
+            {x: 14, y: 13},
+            {x: 16, y: 13},
+            {x: 18, y: 13},
+            {x: 26, y: 13},
+            {x: 31, y: 13},
+            {x: 33, y: 13},
+            {x: 34, y: 13},
+            {x: 35, y: 13},
+            {x: 36, y: 13},
+            {x: 37, y: 13},
+            {x: 39, y: 13},
+            {x: 41, y: 13},
+            {x: 42, y: 13},
+            {x: 44, y: 13},
+            {x: 46, y: 13},
+            {x: 47, y: 13},
+            {x: 48, y: 13},
+            {x: 50, y: 13},
+            {x: 10, y: 14},
+            {x: 12, y: 14},
+            {x: 13, y: 14},
+            {x: 14, y: 14},
+            {x: 16, y: 14},
+            {x: 18, y: 14},
+            {x: 20, y: 14},
+            {x: 21, y: 14},
+            {x: 27, y: 14},
+            {x: 28, y: 14},
+            {x: 29, y: 14},
+            {x: 30, y: 14},
+            {x: 31, y: 14},
+            {x: 32, y: 14},
+            {x: 33, y: 14},
+            {x: 36, y: 14},
+            {x: 37, y: 14},
+            {x: 38, y: 14},
+            {x: 40, y: 14},
+            {x: 41, y: 14},
+            {x: 44, y: 14},
+            {x: 46, y: 14},
+            {x: 47, y: 14},
+            {x: 48, y: 14},
+            {x: 50, y: 14},
+            {x: 10, y: 15},
+            {x: 16, y: 15},
+            {x: 18, y: 15},
+            {x: 19, y: 15},
+            {x: 21, y: 15},
+            {x: 27, y: 15},
+            {x: 30, y: 15},
+            {x: 31, y: 15},
+            {x: 32, y: 15},
+            {x: 35, y: 15},
+            {x: 36, y: 15},
+            {x: 37, y: 15},
+            {x: 42, y: 15},
+            {x: 44, y: 15},
+            {x: 50, y: 15},
+            {x: 10, y: 16},
+            {x: 11, y: 16},
+            {x: 12, y: 16},
+            {x: 13, y: 16},
+            {x: 14, y: 16},
+            {x: 15, y: 16},
+            {x: 16, y: 16},
+            {x: 18, y: 16},
+            {x: 20, y: 16},
+            {x: 22, y: 16},
+            {x: 24, y: 16},
+            {x: 26, y: 16},
+            {x: 28, y: 16},
+            {x: 30, y: 16},
+            {x: 32, y: 16},
+            {x: 34, y: 16},
+            {x: 36, y: 16},
+            {x: 38, y: 16},
+            {x: 40, y: 16},
+            {x: 42, y: 16},
+            {x: 44, y: 16},
+            {x: 45, y: 16},
+            {x: 46, y: 16},
+            {x: 47, y: 16},
+            {x: 48, y: 16},
+            {x: 49, y: 16},
+            {x: 50, y: 16},
+            {x: 18, y: 17},
+            {x: 19, y: 17},
+            {x: 20, y: 17},
+            {x: 23, y: 17},
+            {x: 24, y: 17},
+            {x: 26, y: 17},
+            {x: 29, y: 17},
+            {x: 30, y: 17},
+            {x: 31, y: 17},
+            {x: 32, y: 17},
+            {x: 33, y: 17},
+            {x: 36, y: 17},
+            {x: 37, y: 17},
+            {x: 38, y: 17},
+            {x: 40, y: 17},
+            {x: 41, y: 17},
+            {x: 42, y: 17},
+            {x: 10, y: 18},
+            {x: 12, y: 18},
+            {x: 13, y: 18},
+            {x: 14, y: 18},
+            {x: 15, y: 18},
+            {x: 16, y: 18},
+            {x: 19, y: 18},
+            {x: 21, y: 18},
+            {x: 22, y: 18},
+            {x: 24, y: 18},
+            {x: 25, y: 18},
+            {x: 26, y: 18},
+            {x: 27, y: 18},
+            {x: 29, y: 18},
+            {x: 34, y: 18},
+            {x: 35, y: 18},
+            {x: 36, y: 18},
+            {x: 37, y: 18},
+            {x: 39, y: 18},
+            {x: 41, y: 18},
+            {x: 44, y: 18},
+            {x: 45, y: 18},
+            {x: 46, y: 18},
+            {x: 47, y: 18},
+            {x: 48, y: 18},
+            {x: 10, y: 19},
+            {x: 12, y: 19},
+            {x: 14, y: 19},
+            {x: 15, y: 19},
+            {x: 17, y: 19},
+            {x: 21, y: 19},
+            {x: 23, y: 19},
+            {x: 25, y: 19},
+            {x: 27, y: 19},
+            {x: 28, y: 19},
+            {x: 29, y: 19},
+            {x: 33, y: 19},
+            {x: 35, y: 19},
+            {x: 38, y: 19},
+            {x: 40, y: 19},
+            {x: 41, y: 19},
+            {x: 42, y: 19},
+            {x: 44, y: 19},
+            {x: 45, y: 19},
+            {x: 46, y: 19},
+            {x: 48, y: 19},
+            {x: 49, y: 19},
+            {x: 50, y: 19},
+            {x: 11, y: 20},
+            {x: 12, y: 20},
+            {x: 14, y: 20},
+            {x: 15, y: 20},
+            {x: 16, y: 20},
+            {x: 19, y: 20},
+            {x: 20, y: 20},
+            {x: 21, y: 20},
+            {x: 22, y: 20},
+            {x: 23, y: 20},
+            {x: 26, y: 20},
+            {x: 27, y: 20},
+            {x: 30, y: 20},
+            {x: 31, y: 20},
+            {x: 34, y: 20},
+            {x: 36, y: 20},
+            {x: 37, y: 20},
+            {x: 40, y: 20},
+            {x: 42, y: 20},
+            {x: 44, y: 20},
+            {x: 45, y: 20},
+            {x: 46, y: 20},
+            {x: 10, y: 21},
+            {x: 11, y: 21},
+            {x: 14, y: 21},
+            {x: 17, y: 21},
+            {x: 19, y: 21},
+            {x: 20, y: 21},
+            {x: 24, y: 21},
+            {x: 28, y: 21},
+            {x: 30, y: 21},
+            {x: 31, y: 21},
+            {x: 32, y: 21},
+            {x: 38, y: 21},
+            {x: 41, y: 21},
+            {x: 42, y: 21},
+            {x: 44, y: 21},
+            {x: 47, y: 21},
+            {x: 12, y: 22},
+            {x: 14, y: 22},
+            {x: 15, y: 22},
+            {x: 16, y: 22},
+            {x: 17, y: 22},
+            {x: 19, y: 22},
+            {x: 21, y: 22},
+            {x: 22, y: 22},
+            {x: 23, y: 22},
+            {x: 27, y: 22},
+            {x: 28, y: 22},
+            {x: 29, y: 22},
+            {x: 30, y: 22},
+            {x: 31, y: 22},
+            {x: 32, y: 22},
+            {x: 33, y: 22},
+            {x: 34, y: 22},
+            {x: 35, y: 22},
+            {x: 36, y: 22},
+            {x: 41, y: 22},
+            {x: 42, y: 22},
+            {x: 45, y: 22},
+            {x: 47, y: 22},
+            {x: 48, y: 22},
+            {x: 10, y: 23},
+            {x: 13, y: 23},
+            {x: 14, y: 23},
+            {x: 15, y: 23},
+            {x: 17, y: 23},
+            {x: 18, y: 23},
+            {x: 21, y: 23},
+            {x: 22, y: 23},
+            {x: 24, y: 23},
+            {x: 25, y: 23},
+            {x: 26, y: 23},
+            {x: 31, y: 23},
+            {x: 35, y: 23},
+            {x: 38, y: 23},
+            {x: 39, y: 23},
+            {x: 40, y: 23},
+            {x: 41, y: 23},
+            {x: 44, y: 23},
+            {x: 45, y: 23},
+            {x: 46, y: 23},
+            {x: 47, y: 23},
+            {x: 50, y: 23},
+            {x: 11, y: 24},
+            {x: 15, y: 24},
+            {x: 16, y: 24},
+            {x: 18, y: 24},
+            {x: 19, y: 24},
+            {x: 24, y: 24},
+            {x: 25, y: 24},
+            {x: 26, y: 24},
+            {x: 27, y: 24},
+            {x: 30, y: 24},
+            {x: 32, y: 24},
+            {x: 33, y: 24},
+            {x: 34, y: 24},
+            {x: 35, y: 24},
+            {x: 36, y: 24},
+            {x: 37, y: 24},
+            {x: 40, y: 24},
+            {x: 43, y: 24},
+            {x: 47, y: 24},
+            {x: 49, y: 24},
+            {x: 11, y: 25},
+            {x: 13, y: 25},
+            {x: 15, y: 25},
+            {x: 17, y: 25},
+            {x: 21, y: 25},
+            {x: 22, y: 25},
+            {x: 24, y: 25},
+            {x: 28, y: 25},
+            {x: 31, y: 25},
+            {x: 33, y: 25},
+            {x: 36, y: 25},
+            {x: 38, y: 25},
+            {x: 44, y: 25},
+            {x: 45, y: 25},
+            {x: 47, y: 25},
+            {x: 50, y: 25},
+            {x: 12, y: 26},
+            {x: 13, y: 26},
+            {x: 14, y: 26},
+            {x: 15, y: 26},
+            {x: 16, y: 26},
+            {x: 18, y: 26},
+            {x: 22, y: 26},
+            {x: 26, y: 26},
+            {x: 27, y: 26},
+            {x: 30, y: 26},
+            {x: 32, y: 26},
+            {x: 33, y: 26},
+            {x: 34, y: 26},
+            {x: 35, y: 26},
+            {x: 36, y: 26},
+            {x: 37, y: 26},
+            {x: 38, y: 26},
+            {x: 43, y: 26},
+            {x: 45, y: 26},
+            {x: 48, y: 26},
+            {x: 49, y: 26},
+            {x: 11, y: 27},
+            {x: 12, y: 27},
+            {x: 14, y: 27},
+            {x: 19, y: 27},
+            {x: 20, y: 27},
+            {x: 21, y: 27},
+            {x: 28, y: 27},
+            {x: 29, y: 27},
+            {x: 30, y: 27},
+            {x: 32, y: 27},
+            {x: 33, y: 27},
+            {x: 36, y: 27},
+            {x: 38, y: 27},
+            {x: 40, y: 27},
+            {x: 42, y: 27},
+            {x: 44, y: 27},
+            {x: 45, y: 27},
+            {x: 46, y: 27},
+            {x: 47, y: 27},
+            {x: 50, y: 27},
+            {x: 16, y: 28},
+            {x: 18, y: 28},
+            {x: 19, y: 28},
+            {x: 22, y: 28},
+            {x: 23, y: 28},
+            {x: 24, y: 28},
+            {x: 26, y: 28},
+            {x: 28, y: 28},
+            {x: 30, y: 28},
+            {x: 32, y: 28},
+            {x: 35, y: 28},
+            {x: 37, y: 28},
+            {x: 42, y: 28},
+            {x: 46, y: 28},
+            {x: 11, y: 29},
+            {x: 12, y: 29},
+            {x: 14, y: 29},
+            {x: 15, y: 29},
+            {x: 21, y: 29},
+            {x: 23, y: 29},
+            {x: 29, y: 29},
+            {x: 33, y: 29},
+            {x: 34, y: 29},
+            {x: 36, y: 29},
+            {x: 37, y: 29},
+            {x: 40, y: 29},
+            {x: 41, y: 29},
+            {x: 43, y: 29},
+            {x: 46, y: 29},
+            {x: 47, y: 29},
+            {x: 50, y: 29},
+            {x: 10, y: 30},
+            {x: 15, y: 30},
+            {x: 16, y: 30},
+            {x: 17, y: 30},
+            {x: 20, y: 30},
+            {x: 21, y: 30},
+            {x: 22, y: 30},
+            {x: 26, y: 30},
+            {x: 28, y: 30},
+            {x: 29, y: 30},
+            {x: 31, y: 30},
+            {x: 32, y: 30},
+            {x: 33, y: 30},
+            {x: 35, y: 30},
+            {x: 36, y: 30},
+            {x: 38, y: 30},
+            {x: 39, y: 30},
+            {x: 43, y: 30},
+            {x: 45, y: 30},
+            {x: 49, y: 30},
+            {x: 14, y: 31},
+            {x: 19, y: 31},
+            {x: 21, y: 31},
+            {x: 26, y: 31},
+            {x: 29, y: 31},
+            {x: 30, y: 31},
+            {x: 33, y: 31},
+            {x: 35, y: 31},
+            {x: 38, y: 31},
+            {x: 39, y: 31},
+            {x: 41, y: 31},
+            {x: 43, y: 31},
+            {x: 44, y: 31},
+            {x: 46, y: 31},
+            {x: 47, y: 31},
+            {x: 49, y: 31},
+            {x: 50, y: 31},
+            {x: 10, y: 32},
+            {x: 12, y: 32},
+            {x: 13, y: 32},
+            {x: 16, y: 32},
+            {x: 17, y: 32},
+            {x: 18, y: 32},
+            {x: 21, y: 32},
+            {x: 22, y: 32},
+            {x: 23, y: 32},
+            {x: 26, y: 32},
+            {x: 32, y: 32},
+            {x: 35, y: 32},
+            {x: 36, y: 32},
+            {x: 37, y: 32},
+            {x: 38, y: 32},
+            {x: 39, y: 32},
+            {x: 43, y: 32},
+            {x: 46, y: 32},
+            {x: 10, y: 33},
+            {x: 11, y: 33},
+            {x: 13, y: 33},
+            {x: 14, y: 33},
+            {x: 17, y: 33},
+            {x: 18, y: 33},
+            {x: 19, y: 33},
+            {x: 20, y: 33},
+            {x: 25, y: 33},
+            {x: 26, y: 33},
+            {x: 28, y: 33},
+            {x: 31, y: 33},
+            {x: 33, y: 33},
+            {x: 36, y: 33},
+            {x: 37, y: 33},
+            {x: 38, y: 33},
+            {x: 42, y: 33},
+            {x: 43, y: 33},
+            {x: 45, y: 33},
+            {x: 46, y: 33},
+            {x: 47, y: 33},
+            {x: 15, y: 34},
+            {x: 16, y: 34},
+            {x: 18, y: 34},
+            {x: 21, y: 34},
+            {x: 25, y: 34},
+            {x: 27, y: 34},
+            {x: 29, y: 34},
+            {x: 32, y: 34},
+            {x: 34, y: 34},
+            {x: 35, y: 34},
+            {x: 36, y: 34},
+            {x: 39, y: 34},
+            {x: 48, y: 34},
+            {x: 49, y: 34},
+            {x: 10, y: 35},
+            {x: 12, y: 35},
+            {x: 13, y: 35},
+            {x: 18, y: 35},
+            {x: 20, y: 35},
+            {x: 21, y: 35},
+            {x: 22, y: 35},
+            {x: 23, y: 35},
+            {x: 24, y: 35},
+            {x: 26, y: 35},
+            {x: 28, y: 35},
+            {x: 29, y: 35},
+            {x: 30, y: 35},
+            {x: 33, y: 35},
+            {x: 39, y: 35},
+            {x: 40, y: 35},
+            {x: 41, y: 35},
+            {x: 45, y: 35},
+            {x: 46, y: 35},
+            {x: 47, y: 35},
+            {x: 49, y: 35},
+            {x: 50, y: 35},
+            {x: 10, y: 36},
+            {x: 11, y: 36},
+            {x: 13, y: 36},
+            {x: 14, y: 36},
+            {x: 15, y: 36},
+            {x: 16, y: 36},
+            {x: 17, y: 36},
+            {x: 20, y: 36},
+            {x: 21, y: 36},
+            {x: 22, y: 36},
+            {x: 23, y: 36},
+            {x: 25, y: 36},
+            {x: 27, y: 36},
+            {x: 30, y: 36},
+            {x: 31, y: 36},
+            {x: 37, y: 36},
+            {x: 38, y: 36},
+            {x: 39, y: 36},
+            {x: 40, y: 36},
+            {x: 42, y: 36},
+            {x: 10, y: 37},
+            {x: 11, y: 37},
+            {x: 17, y: 37},
+            {x: 18, y: 37},
+            {x: 20, y: 37},
+            {x: 26, y: 37},
+            {x: 29, y: 37},
+            {x: 30, y: 37},
+            {x: 31, y: 37},
+            {x: 32, y: 37},
+            {x: 33, y: 37},
+            {x: 36, y: 37},
+            {x: 41, y: 37},
+            {x: 42, y: 37},
+            {x: 46, y: 37},
+            {x: 47, y: 37},
+            {x: 50, y: 37},
+            {x: 10, y: 38},
+            {x: 11, y: 38},
+            {x: 16, y: 38},
+            {x: 17, y: 38},
+            {x: 18, y: 38},
+            {x: 20, y: 38},
+            {x: 22, y: 38},
+            {x: 23, y: 38},
+            {x: 25, y: 38},
+            {x: 26, y: 38},
+            {x: 29, y: 38},
+            {x: 32, y: 38},
+            {x: 34, y: 38},
+            {x: 35, y: 38},
+            {x: 36, y: 38},
+            {x: 37, y: 38},
+            {x: 38, y: 38},
+            {x: 39, y: 38},
+            {x: 41, y: 38},
+            {x: 42, y: 38},
+            {x: 47, y: 38},
+            {x: 48, y: 38},
+            {x: 50, y: 38},
+            {x: 10, y: 39},
+            {x: 11, y: 39},
+            {x: 12, y: 39},
+            {x: 17, y: 39},
+            {x: 21, y: 39},
+            {x: 23, y: 39},
+            {x: 24, y: 39},
+            {x: 28, y: 39},
+            {x: 30, y: 39},
+            {x: 34, y: 39},
+            {x: 35, y: 39},
+            {x: 36, y: 39},
+            {x: 38, y: 39},
+            {x: 41, y: 39},
+            {x: 42, y: 39},
+            {x: 44, y: 39},
+            {x: 45, y: 39},
+            {x: 46, y: 39},
+            {x: 47, y: 39},
+            {x: 48, y: 39},
+            {x: 10, y: 40},
+            {x: 13, y: 40},
+            {x: 15, y: 40},
+            {x: 16, y: 40},
+            {x: 18, y: 40},
+            {x: 19, y: 40},
+            {x: 20, y: 40},
+            {x: 23, y: 40},
+            {x: 27, y: 40},
+            {x: 28, y: 40},
+            {x: 29, y: 40},
+            {x: 31, y: 40},
+            {x: 37, y: 40},
+            {x: 38, y: 40},
+            {x: 42, y: 40},
+            {x: 43, y: 40},
+            {x: 44, y: 40},
+            {x: 45, y: 40},
+            {x: 46, y: 40},
+            {x: 47, y: 40},
+            {x: 10, y: 41},
+            {x: 12, y: 41},
+            {x: 21, y: 41},
+            {x: 23, y: 41},
+            {x: 25, y: 41},
+            {x: 29, y: 41},
+            {x: 30, y: 41},
+            {x: 31, y: 41},
+            {x: 32, y: 41},
+            {x: 33, y: 41},
+            {x: 34, y: 41},
+            {x: 36, y: 41},
+            {x: 37, y: 41},
+            {x: 41, y: 41},
+            {x: 43, y: 41},
+            {x: 44, y: 41},
+            {x: 45, y: 41},
+            {x: 46, y: 41},
+            {x: 47, y: 41},
+            {x: 10, y: 42},
+            {x: 14, y: 42},
+            {x: 15, y: 42},
+            {x: 16, y: 42},
+            {x: 17, y: 42},
+            {x: 18, y: 42},
+            {x: 20, y: 42},
+            {x: 22, y: 42},
+            {x: 23, y: 42},
+            {x: 25, y: 42},
+            {x: 26, y: 42},
+            {x: 27, y: 42},
+            {x: 28, y: 42},
+            {x: 29, y: 42},
+            {x: 32, y: 42},
+            {x: 33, y: 42},
+            {x: 34, y: 42},
+            {x: 36, y: 42},
+            {x: 39, y: 42},
+            {x: 40, y: 42},
+            {x: 42, y: 42},
+            {x: 43, y: 42},
+            {x: 44, y: 42},
+            {x: 45, y: 42},
+            {x: 46, y: 42},
+            {x: 48, y: 42},
+            {x: 49, y: 42},
+            {x: 50, y: 42},
+            {x: 18, y: 43},
+            {x: 19, y: 43},
+            {x: 20, y: 43},
+            {x: 21, y: 43},
+            {x: 22, y: 43},
+            {x: 25, y: 43},
+            {x: 27, y: 43},
+            {x: 28, y: 43},
+            {x: 29, y: 43},
+            {x: 30, y: 43},
+            {x: 31, y: 43},
+            {x: 32, y: 43},
+            {x: 33, y: 43},
+            {x: 38, y: 43},
+            {x: 42, y: 43},
+            {x: 46, y: 43},
+            {x: 48, y: 43},
+            {x: 49, y: 43},
+            {x: 50, y: 43},
+            {x: 10, y: 44},
+            {x: 11, y: 44},
+            {x: 12, y: 44},
+            {x: 13, y: 44},
+            {x: 14, y: 44},
+            {x: 15, y: 44},
+            {x: 16, y: 44},
+            {x: 21, y: 44},
+            {x: 22, y: 44},
+            {x: 23, y: 44},
+            {x: 27, y: 44},
+            {x: 31, y: 44},
+            {x: 34, y: 44},
+            {x: 36, y: 44},
+            {x: 37, y: 44},
+            {x: 38, y: 44},
+            {x: 39, y: 44},
+            {x: 40, y: 44},
+            {x: 41, y: 44},
+            {x: 42, y: 44},
+            {x: 44, y: 44},
+            {x: 46, y: 44},
+            {x: 47, y: 44},
+            {x: 10, y: 45},
+            {x: 16, y: 45},
+            {x: 18, y: 45},
+            {x: 21, y: 45},
+            {x: 23, y: 45},
+            {x: 24, y: 45},
+            {x: 27, y: 45},
+            {x: 28, y: 45},
+            {x: 29, y: 45},
+            {x: 31, y: 45},
+            {x: 32, y: 45},
+            {x: 40, y: 45},
+            {x: 41, y: 45},
+            {x: 42, y: 45},
+            {x: 46, y: 45},
+            {x: 47, y: 45},
+            {x: 50, y: 45},
+            {x: 10, y: 46},
+            {x: 12, y: 46},
+            {x: 13, y: 46},
+            {x: 14, y: 46},
+            {x: 16, y: 46},
+            {x: 18, y: 46},
+            {x: 21, y: 46},
+            {x: 23, y: 46},
+            {x: 29, y: 46},
+            {x: 30, y: 46},
+            {x: 31, y: 46},
+            {x: 34, y: 46},
+            {x: 35, y: 46},
+            {x: 36, y: 46},
+            {x: 37, y: 46},
+            {x: 39, y: 46},
+            {x: 42, y: 46},
+            {x: 43, y: 46},
+            {x: 44, y: 46},
+            {x: 45, y: 46},
+            {x: 46, y: 46},
+            {x: 47, y: 46},
+            {x: 50, y: 46},
+            {x: 10, y: 47},
+            {x: 12, y: 47},
+            {x: 13, y: 47},
+            {x: 14, y: 47},
+            {x: 16, y: 47},
+            {x: 18, y: 47},
+            {x: 19, y: 47},
+            {x: 23, y: 47},
+            {x: 26, y: 47},
+            {x: 27, y: 47},
+            {x: 28, y: 47},
+            {x: 30, y: 47},
+            {x: 31, y: 47},
+            {x: 32, y: 47},
+            {x: 33, y: 47},
+            {x: 35, y: 47},
+            {x: 37, y: 47},
+            {x: 38, y: 47},
+            {x: 40, y: 47},
+            {x: 43, y: 47},
+            {x: 45, y: 47},
+            {x: 48, y: 47},
+            {x: 49, y: 47},
+            {x: 50, y: 47},
+            {x: 10, y: 48},
+            {x: 12, y: 48},
+            {x: 13, y: 48},
+            {x: 14, y: 48},
+            {x: 16, y: 48},
+            {x: 18, y: 48},
+            {x: 19, y: 48},
+            {x: 20, y: 48},
+            {x: 21, y: 48},
+            {x: 24, y: 48},
+            {x: 25, y: 48},
+            {x: 26, y: 48},
+            {x: 28, y: 48},
+            {x: 34, y: 48},
+            {x: 35, y: 48},
+            {x: 36, y: 48},
+            {x: 37, y: 48},
+            {x: 38, y: 48},
+            {x: 39, y: 48},
+            {x: 40, y: 48},
+            {x: 41, y: 48},
+            {x: 43, y: 48},
+            {x: 44, y: 48},
+            {x: 45, y: 48},
+            {x: 46, y: 48},
+            {x: 47, y: 48},
+            {x: 10, y: 49},
+            {x: 16, y: 49},
+            {x: 19, y: 49},
+            {x: 21, y: 49},
+            {x: 26, y: 49},
+            {x: 27, y: 49},
+            {x: 28, y: 49},
+            {x: 29, y: 49},
+            {x: 31, y: 49},
+            {x: 32, y: 49},
+            {x: 34, y: 49},
+            {x: 36, y: 49},
+            {x: 42, y: 49},
+            {x: 44, y: 49},
+            {x: 46, y: 49},
+            {x: 47, y: 49},
+            {x: 49, y: 49},
+            {x: 10, y: 50},
+            {x: 11, y: 50},
+            {x: 12, y: 50},
+            {x: 13, y: 50},
+            {x: 14, y: 50},
+            {x: 15, y: 50},
+            {x: 16, y: 50},
+            {x: 18, y: 50},
+            {x: 19, y: 50},
+            {x: 20, y: 50},
+            {x: 21, y: 50},
+            {x: 22, y: 50},
+            {x: 27, y: 50},
+            {x: 28, y: 50},
+            {x: 29, y: 50},
+            {x: 32, y: 50},
+            {x: 34, y: 50},
+            {x: 35, y: 50},
+            {x: 36, y: 50},
+            {x: 37, y: 50},
+            {x: 38, y: 50},
+            {x: 39, y: 50},
+            {x: 41, y: 50},
+            {x: 44, y: 50},
+            {x: 45, y: 50},
+            {x: 46, y: 50},
+            {x: 47, y: 50},
+            {x: 48, y: 50},
+        ];
+        totalBlocks = Positions.length;
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        shuffle(Positions);
+
+        let grayBlocks = [];
+
+        function drawBlock(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * blockSize, y * blockSize, blockSize, blockSize);
+        }
+
+        function placeNextFruit() {
+            if (fruitIndex >= Positions.length) return null;
+            return Positions[fruitIndex];
+        }
+
+        let fruit = placeNextFruit();
+
+        // Função para controlar direção
+        function changeDirection(newDirection) {
+            if (frozen) return;
+            
+            switch(newDirection) {
+                case 'up':
+                    if (direction.y !== 1) direction = {x: 0, y: -1};
+                    break;
+                case 'down':
+                    if (direction.y !== -1) direction = {x: 0, y: 1};
+                    break;
+                case 'left':
+                    if (direction.x !== 1) direction = {x: -1, y: 0};
+                    break;
+                case 'right':
+                    if (direction.x !== -1) direction = {x: 1, y: 0};
+                    break;
+            }
+        }
+
+        // Event listeners para teclado (PC)
+        document.addEventListener('keydown', e => {
+            if (frozen) return;
+            if (e.key === 'ArrowUp' && direction.y !== 1) direction = {x: 0, y: -1};
+            if (e.key === 'ArrowDown' && direction.y !== -1) direction = {x: 0, y: 1};
+            if (e.key === 'ArrowLeft' && direction.x !== 1) direction = {x: -1, y: 0};
+            if (e.key === 'ArrowRight' && direction.x !== -1) direction = {x: 1, y: 0};
+        });
+
+        // Event listeners para botões mobile
+        document.getElementById('upBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            changeDirection('up');
+        });
+        
+        document.getElementById('downBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            changeDirection('down');
+        });
+        
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            changeDirection('left');
+        });
+        
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            changeDirection('right');
+        });
+
+        // Também adicionar click events como fallback
+        document.getElementById('upBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            changeDirection('up');
+        });
+        
+        document.getElementById('downBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            changeDirection('down');
+        });
+        
+        document.getElementById('leftBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            changeDirection('left');
+        });
+        
+        document.getElementById('rightBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            changeDirection('right');
+        });
+
+        function gameLoop() {
+            if (gameOver || frozen) return;
+
+            const head = {x: snake[0].x + direction.x, y: snake[0].y + direction.y};
+
+            // Check wall collision
+            if (head.x < 0 || head.x >= gridSize || head.y < 0 || head.y >= gridSize) {
+                endGame();
+                return;
+            }
+
+            // Check self collision
+            if (snake.some(s => s.x === head.x && s.y === head.y)) {
+                endGame();
+                return;
+            }
+
+            snake.unshift(head);
+
+            // Check fruit
+            if (fruit && head.x === fruit.x && head.y === fruit.y) {
+                grayBlocks.push(fruit);
+                fillCount++;
+                fruitIndex++;
+                fruit = placeNextFruit();
+                document.getElementById('score').innerText = `${fillCount} / ${totalBlocks}`;
+
+                if (fruitIndex >= Positions.length) {
+                    endGame(true);
+                    return;
+                }
+            } else {
+                snake.pop();
+            }
+
+            draw();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw gray blocks
+            grayBlocks.forEach(b => drawBlock(b.x, b.y, grayColor));
+
+            // Draw fruit
+            if (fruit) drawBlock(fruit.x, fruit.y, blackColor);
+
+            // Draw snake (só se ainda estiver viva)
+            if (!frozen) {
+                snake.forEach(s => drawBlock(s.x, s.y, snakeColor));
+            }
+        }
+
+        function endGame(win = false) {
+            frozen = true;   // Faz a cobra parar de responder
+
+            // Cobra desaparece imediatamente
+            snake = [];
+
+            let countdown = 8;
+            document.getElementById('timer').innerText = win ? `Você venceu! Fechando em: ${countdown}` : `Game Over! Fechando em: ${countdown}`;
+
+            const timerInterval = setInterval(() => {
+                countdown--;
+                document.getElementById('timer').innerText = (win ? 'Você venceu! Fechando em: ' : 'Game Over! Fechando em: ') + countdown;
+                if (countdown <= 0) {
+                    clearInterval(timerInterval);
+                    showFinalScreen();
+                } else {
+                    draw();  // Atualiza tela sem a cobra
+                }
+            }, 1000);
+        }
+
+        function showFinalScreen() {
+            ctx.fillStyle = '#191919';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = '60px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Fim!', canvas.width / 2, canvas.height / 2);
+        }
+
+        function resetGame() {
+            snake = [{x: 30, y: 30}];
+            direction = {x: 1, y: 0};
+            grayBlocks = [];
+            fillCount = 0;
+            fruitIndex = 0;
+            shuffle(Positions);
+            fruit = placeNextFruit();
+            gameOver = false;
+            frozen = false;
+            document.getElementById('score').innerText = `0 / ${totalBlocks}`;
+            document.getElementById('timer').innerText = '';
+        }
+
+        draw();
+        document.getElementById('score').innerText = `0 / ${totalBlocks}`;
+        setInterval(gameLoop, 75); // Velocidade da cobra - aumentar número para diminuir a velocidade
+    </script>
+</body>
+</html>
